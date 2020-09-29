@@ -11,7 +11,7 @@ const outputPath = path.join(OUTPUT_DIR, "team.html");
 const render = require("./lib/htmlRenderer");
 const Employee = require("./lib/Employee");
 
-const teamArray = []
+const teamArray = [];
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
 
@@ -35,86 +35,128 @@ const teamArray = []
 // object with the correct structure and methods. This structure will be crucial in order
 // for the provided `render` function to work! ```
 const questionsArray = [
-    {
-        type: "list",
-        name: "role",
-        message: "What is your role",
-        choices: ["Manger", "Engineer", "intern"]
-    },
-    {
-        type: "input",
-        name: "name",
-        message: "What is your name",
+  {
+    type: "list",
+    name: "role",
+    message: "What is your role",
+    choices: ["Manger", "Engineer", "intern"],
+  },
+  {
+    type: "input",
+    name: "name",
+    message: "What is your name",
+  },
 
-    },
+  {
+    type: "input",
+    name: "id",
+    message: "What is your employee id?",
+  },
+  {
+    type: "input",
+    name: "email",
+    message: "What is your employee email?",
+    validate: function (input) {
+      const emailRegexp = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
-    {
-        type: "input",
-        name: "id",
-        message: "What is your employee id?",
+      if (emailRegexp.test(input)) {
+        return true;
+      } else {
+        return "Please use a valid email";
+      }
+    },
+  },
+  {
+    type: "input",
+    name: "github",
+    message: "What is your github username",
+    when: function (value) {
+      if (value.role === "Engineer") {
+        return true;
+      } else {
+        return false;
+      }
+    },
+  },
+  {
+    type: "input",
+    name: "school",
+    message: "What school do you attend",
+    when: function (value) {
+      if (value.role === "intern") {
+        return true;
+      } else {
+        return false;
+      }
+    },
+  },
+  {
+    type: "input",
+    name: "officenumber",
+    message: "What is your office number",
+    when: function (value) {
+      if (value.role === "Manager") {
+        return true;
+      } else {
+        return false;
+      }
+    },
+  },
+];
 
-    },
-    {
-        type: "input",
-        name: "email",
-        message: "What is your employee email?",
-    },
-    {
-        type: "input",
-        name: "github",
-        message: "What is your github username",
-        when: function (value) {
-            if (value.role === "Engineer" ) {
-                return true
-            }else {
-                return false
+function buildTeam() {
+  inquirer.prompt(questionsArray).then(function (answers) {
+    if (answers.role === "Manager") {
+      const teamMember = new Manager(
+        answers.name,
+        answers.id,
+        answers.email,
+        answers.officenumber
+      );
+      teamArray.push(teamMember);
+    } else if (answers.role === "intern") {
+      const teamMember = new Intern(
+        answers.name,
+        answers.id,
+        answers.email,
+        answers.school
+      );
+      teamArray.push(teamMember);
+    } else {
+      const teamMember = new Engineer(
+        answers.name,
+        answers.id,
+        answers.email,
+        answers.github
+      );
+      teamArray.push(teamMember);
+    }
+    inquirer
+      .prompt({
+        type: "confirm",
+        message: "Would you like to add another team member?",
+        name: "addAnother",
+      })
+      .then(function (ans) {
+        ///recall buildTeam or call render method
+        if (ans.addAnother) {
+          buildTeam();
+        } else {
+          const htmlStr = render(teamArray);
+          const dir = "./output";
+
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir);
+          }
+          fs.writeFile(outputPath, htmlStr, function (err, data) {
+            if (err) {
+              throw err;
             }
+            console.log("Success");
+          });
         }
-
-    },
-    {
-        type: "input",
-        name: "school",
-        message: "What school do you attend",
-        when: function (value) {
-            if (value.role === "intern" ) {
-                return true
-            }else {
-                return false
-            }
-        }
-
-    },
-    {
-        type: "input",
-        name: "officenumber",
-        message: "What is your office number",
-        when: function (value) {
-            if (value.role === "Manager" ) {
-                return true
-            }else {
-                return false
-            }
-        }
-
-    }
-]
-
-
-function buildTeam(){
-    inquirer.prompt(questionsArray).then (function (answers){
-    if (answers.role === "Manager" ) {
-        const teamMember = new Manager (answers.name, answers.id, answers.email, answers.officenumber)
-        teamArray.push (teamMember)
-    }
-    else if (answers.role === "intern" ) {
-        const teamMember = new intern (answers.name, answers.id, answers.email, answers.school)
-        teamArray.push (teamMember)
-    }
-    else {
-        const teamMember = new Engineer (answers.name, answers.id, answers.email, answers.github)
-        teamArray.push (teamMember)
-    }
-    inquirer.promp (){}
-    })
+      });
+  });
 }
+
+buildTeam();
